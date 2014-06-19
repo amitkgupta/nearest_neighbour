@@ -20,7 +20,7 @@ They're all the same algorithm, but by some luck, the Golang implementation does
 
 #### Golang
 ```
-$ time go run foo.go
+$ time go run main.go
 
 475
 
@@ -82,7 +82,6 @@ Running time: 6.357621145 seconds
 
 ## TODO
 
-* Clean up shitty code
 * See if it can be sped up with goroutines
 * Stop calling everything "foo"
 * Write a blog post
