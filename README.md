@@ -84,6 +84,7 @@ Running time: 6.357621145 seconds
 
 * See if it can be sped up with goroutines
 * Stop calling everything "foo"
+* Update this README since you no longer call everything "foo"
 * Write a blog post
 * Do it in C++
 * Do it in Python with [scikit-learn](http://scipy-lectures.github.io/advanced/scikit-learn/)
