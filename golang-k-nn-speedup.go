@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
+	"runtime"
 	"strconv"
 )
 
@@ -59,7 +60,7 @@ func parseCSVFile(filePath string) []LabelWithFeatures {
 func squareDistanceWithBailout(features1, features2 []uint32, bailout uint32) (d uint32) {
 	for i := 0; i < len(features1); i++ {
 		x := features1[i] - features2[i]
-		d = d + x*x
+		d += x * x
 
 		if d > bailout {
 			break
@@ -88,14 +89,25 @@ func classify(features []uint32) (label []byte) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	validationSample := parseCSVFile("validationsample.csv")
 
-	totalCorrect := 0
+	var totalCorrect uint32 = 0
+	successChannel := make(chan uint32)
 
 	for _, test := range validationSample {
-		if string(test.Label) == string(classify(test.Features)) {
-			totalCorrect++
-		}
+		go func(t LabelWithFeatures) {
+			if string(t.Label) == string(classify(t.Features)) {
+				successChannel <- 1
+			} else {
+				successChannel <- 0
+			}
+		}(test)
+	}
+
+	for i := 0; i < len(validationSample); i++ {
+		totalCorrect += <-successChannel
 	}
 
 	fmt.Println(float64(totalCorrect) / float64(len(validationSample)))
