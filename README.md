@@ -63,7 +63,7 @@ user	1m17.980s
 sys	0m0.155s
 ```
 
-#### F\#
+#### F\# 
 ```
 $ time ./fsharp-k-nn.exe
 
@@ -124,7 +124,7 @@ sys	0m0.116s
 
 1. Tell me if I should use special compiler flags to improve performance for some of the languages.
 2. Tell my why this experiment is invalid.
-2. Improve naive implementations without changing the spirit of the algorithm (e.g. use eager evaluation in Haskell)
+2. Improve naive implementations without changing the spirit of the algorithm (e.g. use eager evaluation in Haskell).
 3. Add optimized implementations of k-NN which improve performance at no cost to accuracy.
 4. Add implementations for other languages (with compilation and/or run instructions).
 
