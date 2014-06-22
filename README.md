@@ -89,12 +89,12 @@ sys	0m0.257s
 #### Factor
 ```
 $ mkdir -p $FACTOR_HOME/work/k-nn
-$ cp k-nn.factor $FACTOR_HOME/work/k-nn
+$ cp factor/factor-k-nn.factor $FACTOR_HOME/work/k-nn
 $ cp *.csv $FACTOR_HOME/work/k-nn
 $ $FACTOR_HOME/factor
 
-IN: scratchpad USE: k-nn
-Loading resource:work/k-nn/k-nn.factor
+IN: scratchpad USE: factor-k-nn
+Loading resource:work/k-nn/factor-k-nn.factor
 Loading resource:basis/formatting/formatting.factor
 Loading resource:basis/formatting/formatting-docs.factor
 
@@ -108,7 +108,7 @@ Running time: 6.357621145 seconds
 For Golang, an additional implementation is given which is signficantly faster, but suffers no loss in accuracy.  It involves two optimizations:
 
 1. Short-circuit distance calculations between a test case and a training case that are necessarily suboptimal.  In other words, if you know the distance to one potential nearest neighbour is 100, and half-way through calculating the distance to another potential nearest neighbour you already have a distance-so-far of 105, stop calculating and move on to the next candidate for nearest neighbour.
-2. Use goroutines to parallelize the computations.  The way this was done was not ideal, because the parallelism isn't in the classification algorithm itself, instead it parellelizes the classification of the members of the validation sample.  However, that is easy enough to do, and what's currently there is good enough to see how significant the gains are when firing on all your cores.
+2. Use goroutines to parallelize the computations.  The way this was done was not ideal, because the parallelism isn't in the classification algorithm itself, instead it parellelizes the classification of the members of the validation sample.  However, it's is easy enough to "do it right", and what's currently there is good enough to see how significant the gains are when firing on all your cores.
 
 ```
 $ time go run golang-k-nn-speedup.go
@@ -130,10 +130,9 @@ sys	0m0.116s
 
 ## TODO
 
-* Write a blog post
-* Do it in C
 * Make the Go stuff a useable package
 * Explore Accuracy vs Time tradeoffs of only considering some of the training set or some of the pixels when classifying a test case
 * Make it easy to experiment with a matrix of different options
+* Do it in C
 * Do it in Python with [scikit-learn](http://scipy-lectures.github.io/advanced/scikit-learn/)
 
