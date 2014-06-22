@@ -120,6 +120,24 @@ user	0m2.789s
 sys	0m0.116s
 ```
 
+#### Octave
+
+Since turning this into a blog post and submitting to Reddit, I've seen implementations in Matlab/Octave and Julia, and a drastically faster Haskell implementation.  Here's the performance characteristics for Octave, with code thanks to [this guy](https://github.com/tavert).
+
+```
+$ cp octave/octave-k-nn.m octaveknn.m
+$ octave
+
+octave:1> octaveknn;
+Percentage correct: 94.400000%
+Elapsed time is 2.53968 seconds.
+
+$ rm octaveknn.m
+```
+
+### Julia
+
+
 ## Contributing
 
 1. Tell me if I should use special compiler flags to improve performance for some of the languages.
