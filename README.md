@@ -1,4 +1,4 @@
-# k-NN Algorithm in Golang, Haskell, Rust, F\#, OCaml, and Factor
+# k-NN Algorithm in Golang, Haskell, Rust, F\#, Julia, OCaml, Octave and Factor
 
 This repository contains naive implementations of the [k-NN algorithm](http://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm) in several languages (for k = 1), and an extra one in Golang with some optimizations.
 
@@ -9,18 +9,20 @@ This was inspired by a chain of blog posts:
 * [the one before that](http://huonw.github.io/2014/06/10/knn-rust.html) did it in [Rust](http://www.rust-lang.org/).  
 * that one was inspired by [a blog post](http://philtomson.github.io/blog/2014/05/29/comparing-a-machine-learning-algorithm-implemented-in-f-number-and-ocaml/) which had it in [F#](http://fsharp.org/) and [OCaml](http://ocaml.org/), and [a follow-up](http://philtomson.github.io/blog/2014/05/30/stop-the-presses-ocaml-wins/) which improves the first OCaml implementation.
 
-This repository adds the naive implementation in [Golang](http://golang.org) and [Haskell](http://www.haskell.org/), and an additional implementation in Golang with some optimizations.
+This repository adds the naive implementation in [Golang](http://golang.org) and [Haskell](http://www.haskell.org/), an additional implementation in Golang with some optimizations, and thanks to [this guy](https://github.com/tavert), a couple implementations in [Julia](http://julialang.org/) and [Octave](http://www.gnu.org/software/octave/).
 
 ## Comparison
 
 Performance comparisons between the naive implementations in each language were performed on a freshly spun up c3.xlarge EC2 instance as follows:
 
-1. Install Golang, Haskell, Rust, F#, and OCaml. Download Factor.
-2. Write the (naive) code for Golang and Haskell. Copy-paste the code for Rust, F#, OCaml, and Factor.
-3. Compile executable binaries for Haskell, Rust, F#, and OCaml.  Run the Factor code in the `scratchpad` REPL.  Run the Golang code with `go run`.
+1. Install Golang, Haskell, Rust, F#, OCaml and Octave, either with `apt-get` or building from source `./configure && make && make install # ...etc`.  Install the latest [nightly Julia build](https://code.launchpad.net/~staticfloat/+archive/julianightlies/+build/6119203) with `dpkg`. Download Factor.
+2. Write the (naive) code for Golang and Haskell. Copy-paste the code for Rust, F#, OCaml, Julia, Octave, and Factor.
+3. Compile executable binaries for Haskell, Rust, F#, and OCaml.  Run the Factor code in the `scratchpad` REPL and the Octave code in the Octave REPL.  Run the Golang code with `go run` and the Julia code with `julia`.
 
 ### Results
 
+1. Julia: 1.557s - 3.432s*
+1. Octave: 2.540s
 1. Golang: 3.467s
 1. Factor: 6.358s
 1. OCaml: 12.757s
@@ -29,6 +31,8 @@ Performance comparisons between the naive implementations in each language were 
 1. Haskell: 91.581s
 
 The naive implementations are all essentially the same algorithm, but the Golang implementation does a bit better in terms of how accurately it classifies memebers of the validation sample (95% vs. 94.4% for all the others).
+
+Julia has an asterisk because its initial run is slower than all subsequent runs.  I'll have to rethink how to make this a fair experiment...
 
 #### Golang
 ```
@@ -75,6 +79,16 @@ user	0m22.751s
 sys	0m0.798s
 ```
 
+#### Julia
+```
+$ julia julia/julia-k-nn.jl
+
+Percentage correct: 94.4%
+elapsed time: 3.438748733 seconds (656566752 bytes allocated, 2.03% gc time)
+Percentage correct: 94.4%
+elapsed time: 1.560125781 seconds (566037680 bytes allocated, 6.06% gc time)
+```
+
 #### OCaml
 ```
 $ time ./ocaml-k-nn
@@ -84,6 +98,18 @@ Percentage correct:94.400000
 real	0m12.757s
 user	0m12.500s
 sys	0m0.257s
+```
+
+#### Octave
+```
+$ cp octave/octave-k-nn.m octaveknn.m
+$ octave
+
+octave:1> octaveknn;
+Percentage correct: 94.400000%
+Elapsed time is 2.53968 seconds.
+
+$ rm octaveknn.m
 ```
 
 #### Factor
@@ -119,24 +145,6 @@ real	0m1.247s
 user	0m2.789s
 sys	0m0.116s
 ```
-
-#### Octave
-
-Since turning this into a blog post and submitting to Reddit, I've seen implementations in Matlab/Octave and Julia, and a drastically faster Haskell implementation.  Here's the performance characteristics for Octave, with code thanks to [this guy](https://github.com/tavert).
-
-```
-$ cp octave/octave-k-nn.m octaveknn.m
-$ octave
-
-octave:1> octaveknn;
-Percentage correct: 94.400000%
-Elapsed time is 2.53968 seconds.
-
-$ rm octaveknn.m
-```
-
-### Julia
-
 
 ## Contributing
 
