@@ -11,12 +11,12 @@ import (
 
 type LabelWithFeatures struct {
 	Label    []byte
-	Features []uint32
+	Features []float32
 }
 
 func NewLabelWithFeatures(parsedLine [][]byte) LabelWithFeatures {
 	label := parsedLine[0]
-	features := make([]uint32, len(parsedLine)-1)
+	features := make([]float32, len(parsedLine)-1)
 
 	for i, feature := range parsedLine {
 		// skip label
@@ -24,7 +24,7 @@ func NewLabelWithFeatures(parsedLine [][]byte) LabelWithFeatures {
 			continue
 		}
 
-		features[i-1] = byteSliceToUInt32(feature)
+		features[i-1] = byteSliceTofloat32(feature)
 	}
 
 	return LabelWithFeatures{label, features}
@@ -33,9 +33,9 @@ func NewLabelWithFeatures(parsedLine [][]byte) LabelWithFeatures {
 var newline = []byte("\n")
 var comma = []byte(",")
 
-func byteSliceToUInt32(b []byte) uint32 {
-	x, _ := strconv.ParseInt(string(b), 10, 8)
-	return uint32(x)
+func byteSliceTofloat32(b []byte) float32 {
+	x, _ := strconv.ParseFloat(string(b), 32) //10, 8)
+	return float32(x)
 }
 
 func parseCSVFile(filePath string) []LabelWithFeatures {
@@ -57,7 +57,7 @@ func parseCSVFile(filePath string) []LabelWithFeatures {
 	return labelsWithFeatures
 }
 
-func squareDistanceWithBailout(features1, features2 []uint32, bailout uint32) (d uint32) {
+func squareDistanceWithBailout(features1, features2 []float32, bailout float32) (d float32) {
 	for i := 0; i < len(features1); i++ {
 		x := features1[i] - features2[i]
 		d += x * x
@@ -72,9 +72,9 @@ func squareDistanceWithBailout(features1, features2 []uint32, bailout uint32) (d
 
 var trainingSample = parseCSVFile("trainingsample.csv")
 
-func classify(features []uint32) (label []byte) {
+func classify(features []float32) (label []byte) {
 	label = trainingSample[0].Label
-	d := squareDistanceWithBailout(features, trainingSample[0].Features, math.MaxUint32)
+	d := squareDistanceWithBailout(features, trainingSample[0].Features, math.MaxFloat32)
 
 	for _, row := range trainingSample {
 		dNew := squareDistanceWithBailout(features, row.Features, d)
@@ -93,8 +93,8 @@ func main() {
 
 	validationSample := parseCSVFile("validationsample.csv")
 
-	var totalCorrect uint32 = 0
-	successChannel := make(chan uint32)
+	var totalCorrect float32 = 0
+	successChannel := make(chan float32)
 
 	for _, test := range validationSample {
 		go func(t LabelWithFeatures) {
@@ -110,5 +110,5 @@ func main() {
 		totalCorrect += <-successChannel
 	}
 
-	fmt.Println(float64(totalCorrect) / float64(len(validationSample)))
+	fmt.Println(float32(totalCorrect) / float32(len(validationSample)))
 }

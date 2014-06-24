@@ -23,14 +23,12 @@ Performance comparisons between the naive implementations in each language were 
 
 1. Julia: 1.557s - 3.432s*
 1. Octave: 2.540s
-1. Golang: 3.467s
+1. Golang: 4.701s
 1. Factor: 6.358s
 1. OCaml: 12.757s
 1. F#: 23.507s
 1. Rust: 78.138s
 1. Haskell: 91.581s
-
-The naive implementations are all essentially the same algorithm, but the Golang implementation does a bit better in terms of how accurately it classifies memebers of the validation sample (95% vs. 94.4% for all the others).
 
 Julia has an asterisk because its initial run is slower than all subsequent runs.  I'll have to rethink how to make this a fair experiment...
 
@@ -38,11 +36,11 @@ Julia has an asterisk because its initial run is slower than all subsequent runs
 ```
 $ time go run golang-k-nn.go
 
-0.95
+0.944
 
-real	0m3.467s
-user	0m3.367s
-sys	0m0.111s
+real  0m4.701s
+user  0m4.582s
+sys 0m0.136s
 ```
 
 #### Haskell
@@ -139,11 +137,11 @@ For Golang, an additional implementation is given which is signficantly faster, 
 ```
 $ time go run golang-k-nn-speedup.go
 
-0.95
+0.944
 
-real	0m1.247s
-user	0m2.789s
-sys	0m0.116s
+real  0m1.375s
+user  0m3.314s
+sys 0m0.117s
 ```
 
 ## Contributing

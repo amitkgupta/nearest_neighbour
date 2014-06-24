@@ -9,12 +9,12 @@ import (
 
 type LabelWithFeatures struct {
 	Label    []byte
-	Features []uint32
+	Features []float64
 }
 
 func NewLabelWithFeatures(parsedLine [][]byte) LabelWithFeatures {
 	label := parsedLine[0]
-	features := make([]uint32, len(parsedLine)-1)
+	features := make([]float64, len(parsedLine)-1)
 
 	for i, feature := range parsedLine {
 		// skip label
@@ -22,7 +22,7 @@ func NewLabelWithFeatures(parsedLine [][]byte) LabelWithFeatures {
 			continue
 		}
 
-		features[i-1] = byteSliceToUInt32(feature)
+		features[i-1] = byteSliceTofloat64(feature)
 	}
 
 	return LabelWithFeatures{label, features}
@@ -31,9 +31,9 @@ func NewLabelWithFeatures(parsedLine [][]byte) LabelWithFeatures {
 var newline = []byte("\n")
 var comma = []byte(",")
 
-func byteSliceToUInt32(b []byte) uint32 {
-	x, _ := strconv.ParseInt(string(b), 10, 8)
-	return uint32(x)
+func byteSliceTofloat64(b []byte) float64 {
+	x, _ := strconv.ParseFloat(string(b), 32)
+	return x
 }
 
 func parseCSVFile(filePath string) []LabelWithFeatures {
@@ -55,24 +55,22 @@ func parseCSVFile(filePath string) []LabelWithFeatures {
 	return labelsWithFeatures
 }
 
-func squareDistance(features1, features2 []uint32) (d uint32) {
+func squareDistance(features1, features2 []float64) (d float64) {  
 	for i := 0; i < len(features1); i++ {
-		x := features1[i] - features2[i]
-		d = d + x*x
-	}
+    d += (features1[i] - features2[i]) * (features1[i] - features2[i])
+  }
 
-	return
+  return
 }
 
 var trainingSample = parseCSVFile("trainingsample.csv")
 
-func classify(features []uint32) (label []byte) {
+func classify(features []float64) (label []byte) {
 	label = trainingSample[0].Label
 	d := squareDistance(features, trainingSample[0].Features)
 
 	for _, row := range trainingSample {
 		dNew := squareDistance(features, row.Features)
-
 		if dNew < d {
 			label = row.Label
 			d = dNew
