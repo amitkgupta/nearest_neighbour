@@ -3,6 +3,7 @@
 import qualified Data.Csv as CSV
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
+import qualified Data.Vector.Unboxed as U
 
 data Observation = Observation
     { label    :: !Label
@@ -10,8 +11,8 @@ data Observation = Observation
     } deriving (Show, Eq)
 
 type Label = CSV.Field
-type Feature = Integer
-type Features = V.Vector Feature
+type Feature = Int
+type Features = U.Vector Feature
 type Observations = V.Vector Observation
 
 main = do
@@ -30,8 +31,8 @@ runClassifier validation training =
         correct = V.zipWith score results validation
      in print (fromIntegral (V.sum correct) / fromIntegral n)
 
-dist :: Observation -> Observation -> Integer
-dist o1 o2 = V.sum $ V.map (^2) $ V.zipWith (-) f1 f2 where
+dist :: Observation -> Observation -> Int
+dist o1 o2 = U.sum $ U.map (^2) $ U.zipWith (-) f1 f2 where
     (f1, f2) = (features o1, features o2)
 
 closestTo :: Observation -> Observation -> Observation -> Ordering
@@ -47,4 +48,4 @@ parseRecords = CSV.decode CSV.HasHeader
 instance CSV.FromRecord Observation where
     parseRecord v = do
         pixels <- V.mapM CSV.parseField (V.tail v)
-        return $ Observation (V.head v) pixels
+        return $ Observation (V.head v) (U.convert pixels)
