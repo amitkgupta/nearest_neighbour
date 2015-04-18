@@ -4,6 +4,7 @@ import qualified Data.Csv as CSV
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
+import qualified Control.Parallel.Strategies as P
 
 data Observation = Observation
     { label    :: !Label
@@ -26,7 +27,8 @@ main = do
 runClassifier :: Observations -> Observations -> IO ()
 runClassifier validation training =
     let n = V.length validation
-        results = V.map (classify training) validation
+        inParallel = P.withStrategy (P.parTraversable P.rpar)
+        results = inParallel $ V.map (classify training) validation
         score l o = if l == label o then 1 else 0
         correct = V.zipWith score results validation
      in print (fromIntegral (V.sum correct) / fromIntegral n)
