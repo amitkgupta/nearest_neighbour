@@ -1,45 +1,50 @@
 {-# LANGUAGE BangPatterns #-}
 
-import Data.Csv
-import qualified Data.ByteString.Lazy as BS
+import qualified Data.Csv as CSV
+import qualified Data.ByteString.Lazy as BL
 import qualified Data.Vector as V
 
-type Label = Field
+data Observation = Observation
+    { label    :: !Label
+    , features :: !Features
+    } deriving (Show, Eq)
 
+type Label = CSV.Field
 type Feature = Integer
-
-data Observation = Observation { label :: !Label
-                               , features :: !(V.Vector Feature)
-                               } deriving (Show, Eq)
-
-instance FromRecord Observation where
-  parseRecord !v = do
-    V.mapM parseField (V.tail v) >>=
-      return . Observation (V.head v)
-
-parseRecords :: BS.ByteString -> Either String (V.Vector Observation)
-parseRecords = decode HasHeader
-
-dist :: (V.Vector Feature) -> (V.Vector Feature) -> Integer
-dist !x !y = V.sum $ V.map (^2) $ V.zipWith (-) x y
-
-closerTo :: (V.Vector Feature) -> Observation -> Observation -> Ordering
-closerTo !target !o1 !o2 = compare (dist target (features o1)) (dist target (features o2))
-
-classify :: (V.Vector Observation) -> (V.Vector Feature) -> Label
-classify !os !fs = label where
-  (Observation label _) = V.minimumBy (closerTo fs) os
-
-checkCorrect :: (V.Vector Observation) -> Observation -> Int
-checkCorrect !training (Observation label features)
-  | label == classify training features = 1
-  | otherwise = 0
+type Features = V.Vector Feature
+type Observations = V.Vector Observation
 
 main = do
-  validationSample <- BS.readFile "validationsample.csv"
-  trainingSample <- BS.readFile "trainingsample.csv"
+    validationSample <- fmap parseRecords $ BL.readFile "validationsample.csv"
+    trainingSample   <- fmap parseRecords $ BL.readFile "trainingsample.csv"
 
-  let Right validation = parseRecords validationSample
-  let Right training = parseRecords trainingSample
-  
-  print (V.sum (V.map (checkCorrect training) validation))
+    case (validationSample, trainingSample) of
+        (Right v, Right t) -> runClassifier v t
+        _otherwise         -> putStrLn "Parsing error"
+
+runClassifier :: Observations -> Observations -> IO ()
+runClassifier validation training =
+    let n = V.length validation
+        results = V.map (classify training) validation
+        score l o = if l == label o then 1 else 0
+        correct = V.zipWith score results validation
+     in print (fromIntegral (V.sum correct) / fromIntegral n)
+
+dist :: Observation -> Observation -> Integer
+dist o1 o2 = V.sum $ V.map (^2) $ V.zipWith (-) f1 f2 where
+    (f1, f2) = (features o1, features o2)
+
+closestTo :: Observation -> Observation -> Observation -> Ordering
+closestTo target o1 o2 = compare (dist target o1) (dist target o2)
+
+classify :: Observations -> Observation -> Label
+classify training obs = label closest where
+    closest = V.minimumBy (closestTo obs) training
+
+parseRecords :: BL.ByteString -> Either String Observations
+parseRecords = CSV.decode CSV.HasHeader
+
+instance CSV.FromRecord Observation where
+    parseRecord v = do
+        pixels <- V.mapM CSV.parseField (V.tail v)
+        return $ Observation (V.head v) pixels
