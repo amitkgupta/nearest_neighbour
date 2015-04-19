@@ -1,45 +1,44 @@
-{-# LANGUAGE BangPatterns #-}
-
-import Data.Csv
-import qualified Data.ByteString.Lazy as BS
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as C8
 import qualified Data.Vector as V
+import qualified Data.Vector.Unboxed as U
+import qualified Control.Parallel.Strategies as P
+import qualified Data.Traversable as T
+import Data.Maybe (fromMaybe)
 
-type Label = Field
+data Observation = Observation
+    { label    :: Label
+    , features :: Features
+    } deriving (Show, Eq)
 
-type Feature = Integer
-
-data Observation = Observation { label :: !Label
-                               , features :: !(V.Vector Feature)
-                               } deriving (Show, Eq)
-
-instance FromRecord Observation where
-  parseRecord !v = do
-    V.mapM parseField (V.tail v) >>=
-      return . Observation (V.head v)
-
-parseRecords :: BS.ByteString -> Either String (V.Vector Observation)
-parseRecords = decode HasHeader
-
-dist :: (V.Vector Feature) -> (V.Vector Feature) -> Integer
-dist !x !y = V.sum $ V.map (^2) $ V.zipWith (-) x y
-
-closerTo :: (V.Vector Feature) -> Observation -> Observation -> Ordering
-closerTo !target !o1 !o2 = compare (dist target (features o1)) (dist target (features o2))
-
-classify :: (V.Vector Observation) -> (V.Vector Feature) -> Label
-classify !os !fs = label where
-  (Observation label _) = V.minimumBy (closerTo fs) os
-
-checkCorrect :: (V.Vector Observation) -> Observation -> Int
-checkCorrect !training (Observation label features)
-  | label == classify training features = 1
-  | otherwise = 0
+type Label = BS.ByteString
+type Feature = Int
+type Features = U.Vector Feature
+type Observations = V.Vector Observation
 
 main = do
-  validationSample <- BS.readFile "validationsample.csv"
-  trainingSample <- BS.readFile "trainingsample.csv"
+    validation <- fmap parseFile $ BS.readFile "validationsample.csv"
+    training   <- fmap parseFile $ BS.readFile "trainingsample.csv"
+    let n = V.length validation
+        results = inParallel $ V.map (classify training) validation
+        score l o = if l == label o then 1 else 0
+        correct = V.zipWith score results validation
+     in print (fromIntegral (V.sum correct) / fromIntegral n)
 
-  let Right validation = parseRecords validationSample
-  let Right training = parseRecords trainingSample
-  
-  print (V.sum (V.map (checkCorrect training) validation))
+classify :: Observations -> Observation -> Label
+classify training obs = label closest where
+    closest = V.minimumBy (closestTo obs) training
+    closestTo target o1 o2 = compare (dist target o1) (dist target o2)
+    dist o1 o2 = vdist (features o1) (features o2)
+    vdist v1 v2 = U.sum $ U.map (^2) $ U.zipWith (-) v1 v2
+
+parseFile :: BS.ByteString -> Observations
+parseFile = V.fromList . observationsOf . wordsOf . linesOf where
+    linesOf = filter (not . BS.null) . drop 1 . C8.split '\n'
+    wordsOf = map (C8.split ',')
+    observationsOf = inParallel . map lineToObservation
+    lineToObservation (l:fs) = Observation l (toFeatures fs)
+    toFeatures = U.fromList . map (fromMaybe 0 . fmap fst) . map C8.readInt
+
+inParallel :: T.Traversable t => t a -> t a
+inParallel = P.withStrategy (P.parTraversable P.rpar)
