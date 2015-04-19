@@ -25,16 +25,12 @@ main = do
         correct = V.zipWith score results validation
      in print (fromIntegral (V.sum correct) / fromIntegral n)
 
-dist :: Observation -> Observation -> Int
-dist o1 o2 = U.sum $ U.map (^2) $ U.zipWith (-) f1 f2 where
-    (f1, f2) = (features o1, features o2)
-
-closestTo :: Observation -> Observation -> Observation -> Ordering
-closestTo target o1 o2 = compare (dist target o1) (dist target o2)
-
 classify :: Observations -> Observation -> Label
 classify training obs = label closest where
     closest = V.minimumBy (closestTo obs) training
+    closestTo target o1 o2 = compare (dist target o1) (dist target o2)
+    dist o1 o2 = vdist (features o1) (features o2)
+    vdist v1 v2 = U.sum $ U.map (^2) $ U.zipWith (-) v1 v2
 
 parseFile :: BS.ByteString -> Observations
 parseFile = V.fromList . observationsOf . wordsOf . linesOf where
