@@ -1,33 +1,25 @@
-{-# LANGUAGE BangPatterns #-}
-
-import qualified Data.Csv as CSV
-import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as C8
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as U
 import qualified Control.Parallel.Strategies as P
+import qualified Data.Traversable as T
+import Data.Maybe (fromMaybe)
 
 data Observation = Observation
-    { label    :: !Label
-    , features :: !Features
+    { label    :: Label
+    , features :: Features
     } deriving (Show, Eq)
 
-type Label = CSV.Field
+type Label = BS.ByteString
 type Feature = Int
 type Features = U.Vector Feature
 type Observations = V.Vector Observation
 
 main = do
-    validationSample <- fmap parseRecords $ BL.readFile "validationsample.csv"
-    trainingSample   <- fmap parseRecords $ BL.readFile "trainingsample.csv"
-
-    case (validationSample, trainingSample) of
-        (Right v, Right t) -> runClassifier v t
-        _otherwise         -> putStrLn "Parsing error"
-
-runClassifier :: Observations -> Observations -> IO ()
-runClassifier validation training =
+    validation <- fmap parseFile $ BS.readFile "validationsample.csv"
+    training   <- fmap parseFile $ BS.readFile "trainingsample.csv"
     let n = V.length validation
-        inParallel = P.withStrategy (P.parTraversable P.rpar)
         results = inParallel $ V.map (classify training) validation
         score l o = if l == label o then 1 else 0
         correct = V.zipWith score results validation
@@ -44,10 +36,13 @@ classify :: Observations -> Observation -> Label
 classify training obs = label closest where
     closest = V.minimumBy (closestTo obs) training
 
-parseRecords :: BL.ByteString -> Either String Observations
-parseRecords = CSV.decode CSV.HasHeader
+parseFile :: BS.ByteString -> Observations
+parseFile = V.fromList . observationsOf . wordsOf . linesOf where
+    linesOf = filter (not . BS.null) . drop 1 . C8.split '\n'
+    wordsOf = map (C8.split ',')
+    observationsOf = inParallel . map lineToObservation
+    lineToObservation (l:fs) = Observation l (toFeatures fs)
+    toFeatures = U.fromList . map (fromMaybe 0 . fmap fst) . map C8.readInt
 
-instance CSV.FromRecord Observation where
-    parseRecord v = do
-        pixels <- V.mapM CSV.parseField (V.tail v)
-        return $ Observation (V.head v) (U.convert pixels)
+inParallel :: T.Traversable t => t a -> t a
+inParallel = P.withStrategy (P.parTraversable P.rpar)
